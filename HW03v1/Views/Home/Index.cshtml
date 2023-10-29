@@ -1,0 +1,182 @@
+﻿@model HW03v1.Models.CombinedViewModel
+
+@{
+    ViewBag.Title = "Combined Index";
+}
+
+<style>
+</style>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.7.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<div class="container">
+    <!-- ------------- Students Table ------------- -->
+    <p>
+        <h1> Students <a href="#" class="create-link btn btn-primary" style="background-color: steelblue" data-url="@Url.Action("Create", "students")"> Create </a> </h1>
+    </p>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr style="background-color:cornflowerblue;">
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().name)</th>
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().surname)</th>
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().birthdate)</th>
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().gender)</th>
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().@class)</th>
+                <th>@Html.DisplayNameFor(model => model.studentsList.First().point)</th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.studentsList)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.surname)</td>
+                    <td>@Html.DisplayFor(modelItem => item.birthdate)</td>
+                    <td>@Html.DisplayFor(modelItem => item.gender)</td>
+                    <td>@Html.DisplayFor(modelItem => item.@class)</td>
+                    <td>@Html.DisplayFor(modelItem => item.point)</td>
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination controls for studentsList -->
+    <ul class="pagination">
+        @for (int i = 1; i <= ViewBag.TotalStudentPages; i++)
+        {
+            <li class="page-item @(i == ViewBag.CurrentStudentPage ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+            </li>
+        }
+    </ul>
+
+
+    <!-- ------------- Books Table ------------- -->
+    <p>
+        <h1> Books  <a href="#" class="create-link btn btn-primary" style="background-color: steelblue" data-url="@Url.Action("Create", "books")"> Create </a> </h1>
+    </p>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr style="background-color: cornflowerblue;">
+                <th>@Html.DisplayNameFor(model => model.bookList.First().name)</th>
+                <th>@Html.DisplayNameFor(model => model.bookList.First().pagecount)</th>
+                <th>@Html.DisplayNameFor(model => model.bookList.First().point)</th>
+                <th>@Html.DisplayNameFor(model => model.bookList.First().authors.name)</th>
+                <th>@Html.DisplayNameFor(model => model.bookList.First().types.name)</th>
+                <th> Status </th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in Model.bookList)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.pagecount)</td>
+                    <td>@Html.DisplayFor(modelItem => item.point)</td>
+                    <td>@Html.DisplayFor(modelItem => item.authors.name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.types.name)</td>
+                    <td>
+                        @{
+                            var bookId = item.bookId;
+                            var latestBorrow = Model.borrowsList
+                                .Where(b => b.bookId == bookId)
+                                .OrderByDescending(b => b.broughtDate)
+                                .FirstOrDefault();
+
+                            if (latestBorrow != null)
+                            {
+                                if (latestBorrow.broughtDate > latestBorrow.takenDate)
+                                {
+                                    <span>Out</span>
+                                }
+                                else
+                                {
+                                    <span>Available</span>
+                                }
+                            }
+                            else
+                            {
+                                <span>Available</span>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination controls for bookList -->
+    <ul class="pagination">
+        @for (int i = 1; i <= ViewBag.TotalBookPages; i++)
+        {
+            <li class="page-item @(i == ViewBag.CurrentBookPage ? "active" : "")">
+                <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+            </li>
+        }
+    </ul>
+</div>
+
+<!-- Modal -->
+
+<div id="modal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal-content">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+
+        $(".edit-link, .edit-link-in-modal").click(function (e) {
+            e.preventDefault();
+            var url = $(this).data("url");
+
+            $.get(url, function (data) {
+                $("#modal-content").empty();
+                $("#modal-content").html(data);
+                $("#modal").modal("show");
+            });
+        });
+
+
+        $("#modal-content").on("submit", "form", function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr("action");
+            var formData = form.serialize();
+
+            $.post(url, formData, function (data) {
+                $("#modal").modal("hide");
+                location.reload();
+            });
+        });
+
+
+        $(".details-link, .delete-link, .create-link, .create-lookup-link").click(function (e) {
+            e.preventDefault();
+            var url = $(this).data("url");
+
+            $.get(url, function (data) {
+                $("#modal-content").empty();
+                $("#modal-content").html(data);
+                $("#modal").modal("show");
+            });
+        });
+    });
+</script>
